@@ -27,6 +27,7 @@ function runSingleSimulationWithAnswerCount() {
     const numTrials = 1000;
     const numQuestions = 20;
     let answerCount = {1:0, 2:0, 3:0, 4:0, 5:0};
+    let totalCorrect = 0;
 
     for (let t = 0; t < numTrials; t++) {
         for (let q = 0; q < numQuestions; q++) {
@@ -34,10 +35,11 @@ function runSingleSimulationWithAnswerCount() {
             const guess = Math.floor(Math.random() * 5) + 1;
             if (answer === guess) {
                 answerCount[answer]++;
+                totalCorrect++;
             }
         }
     }
-    return answerCount;
+    return {answerCount, totalCorrect};
 }
 
 function runNSimulation() {
@@ -51,23 +53,36 @@ function runNSimulation() {
     const resultDiv = document.getElementById('result');
     resultDiv.innerHTML = "";
 
-    for(let i=0; i<n; i++) {
-        const answerCount = runSingleSimulationWithAnswerCount();
-        // 누적합산
-        for(let k=1; k<=5; k++){
+    const totalCorrectList = [];
+    const totalTrialsPerSim = 1000 * 20;
+
+    for(let i = 0; i < n; i++) {
+        const {answerCount, totalCorrect} = runSingleSimulationWithAnswerCount();
+        
+        for(let k = 1; k <= 5; k++) {
             totalAnswerCount[k] += answerCount[k];
         }
+
+        totalCorrectList.push(totalCorrect);
     }
 
     // 가장 많이 맞춘 번호 찾기
     let maxCount = 0;
     let maxNum = null;
-    for(let k=1; k<=5; k++){
-        if(totalAnswerCount[k] > maxCount){
+    for(let k = 1; k <= 5; k++) {
+        if(totalAnswerCount[k] > maxCount) {
             maxCount = totalAnswerCount[k];
             maxNum = k;
         }
     }
+
+    const minCorrect = Math.min(...totalCorrectList);
+    const maxCorrect = Math.max(...totalCorrectList);
+    const avgCorrect = totalCorrectList.reduce((a, b) => a + b, 0) / n;
+
+    const minRate = ((minCorrect / totalTrialsPerSim) * 100).toFixed(2);
+    const maxRate = ((maxCorrect / totalTrialsPerSim) * 100).toFixed(2);
+    const avgRate = ((avgCorrect / totalTrialsPerSim) * 100).toFixed(2);
 
     const summary = document.createElement('div');
     summary.innerHTML = `
@@ -81,6 +96,12 @@ function runNSimulation() {
             <li>3번: ${totalAnswerCount[3]}회</li>
             <li>4번: ${totalAnswerCount[4]}회</li>
             <li>5번: ${totalAnswerCount[5]}회</li>
+        </ul>
+        <p>단일 시뮬레이션 기준 정답률 범위:</p>
+        <ul>
+            <li>최소 정답률: <b>${minRate}%</b></li>
+            <li>최대 정답률: <b>${maxRate}%</b></li>
+            <li>평균 정답률: <b>${avgRate}%</b></li>
         </ul>
     `;
     resultDiv.appendChild(summary);
